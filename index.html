@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="fr" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>English Quest</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand">English Quest</div>
+    <div class="stats">
+      <span class="chip" title="Streak">🔥 <b id="streak">0</b></span>
+      <span class="chip" title="XP">⭐ <b id="xp">0</b></span>
+    </div>
+  </header>
+
+  <div class="langbar" role="group" aria-label="Language">
+    <button data-lang="fr" class="lang">Français</button>
+    <button data-lang="ar" class="lang">العربية</button>
+    <button data-lang="en" class="lang">English</button>
+  </div>
+
+  <div class="progress" aria-hidden="true"><div id="bar"></div></div>
+
+  <main id="screen"></main>
+</div>
+<script src="app.js"></script>
+</body>
+</html>
