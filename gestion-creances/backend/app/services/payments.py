@@ -215,9 +215,10 @@ def create_payment(db: Session, user: User, data: dict) -> tuple[Payment, list[A
                                                Payment.method_id == method.id, Payment.status != "ANNULE")).first()
         if dup:
             raise HTTPException(409, f"Le chèque n° {data['reference']} est déjà enregistré pour ce client")
-    status = INITIAL_STATUS.get(method.kind, "ENCAISSE") if method.requires_clearing or method.kind in INITIAL_STATUS else "ENCAISSE"
+    status = INITIAL_STATUS.get(method.kind, "ENCAISSE")
     p = Payment(number=next_number(db, "PAYMENT", receipt.year), customer_id=cust.id, method_id=method.id, method_kind=method.kind,
-                receipt_date=receipt, value_date=data.get("value_date") or (receipt + dt.timedelta(days=int(get_param(db, "payment.clearing_days_default") or 0))),
+                receipt_date=receipt, value_date=data.get("value_date") or (receipt + dt.timedelta(days=int(get_param(db, "payment.clearing_days_default") or 0))
+                                                       if method.kind in INITIAL_STATUS else receipt),
                 amount=amount, currency=currency, exchange_rate=rate, amount_tnd=q3(amount * rate), reference=data.get("reference"),
                 bank_name=data.get("bank_name"), drawer=data.get("drawer"), status=status, notes=data.get("notes"),
                 created_by=user.id, cleared_date=receipt if status == "ENCAISSE" else None)

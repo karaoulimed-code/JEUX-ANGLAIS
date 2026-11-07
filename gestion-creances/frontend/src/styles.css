@@ -1,0 +1,5 @@
+body { background: var(--mantine-color-gray-0); }
+.nav-section { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--mantine-color-dimmed); font-weight: 700; margin: 14px 0 4px 12px; }
+.demo-banner { background: repeating-linear-gradient(45deg,#fff3bf,#fff3bf 10px,#ffec99 10px,#ffec99 20px); }
+pre.letter { white-space: pre-wrap; font-family: inherit; font-size: 13px; background: var(--mantine-color-gray-0); padding: 12px; border-radius: 8px; border: 1px solid var(--mantine-color-gray-3); }
+@media print { .mantine-AppShell-navbar, .mantine-AppShell-header, .no-print { display: none !important; } .mantine-AppShell-main { padding: 0 !important; } }

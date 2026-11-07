@@ -125,7 +125,7 @@ def monthly_trend(db: Session, as_of: dt.date, months: int = 12) -> list[dict]:
 
 def dashboard(db: Session, as_of: dt.date | None = None, period_start: dt.date | None = None) -> dict:
     as_of = as_of or dt.date.today()
-    period_start = period_start or as_of.replace(day=1)
+    period_start = period_start or (as_of - dt.timedelta(days=29))  # période glissante de 30 jours par défaut
     r = receivables(db, as_of)
     ag = aging(db, as_of)
     conc = concentration(db, as_of)

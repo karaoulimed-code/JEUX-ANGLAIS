@@ -1,0 +1,63 @@
+# Déploiement complet : base PostgreSQL, API, interface web, sauvegardes et traitements nocturnes.
+#   cp .env.example .env        (puis renseigner les mots de passe)
+#   docker compose up -d --build
+#   docker compose exec backend python -m app.seed --admin-password 'VotreMotDePasse2026'
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: creances
+      POSTGRES_USER: creances
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?définir DB_PASSWORD dans .env}
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U creances -d creances"]
+      interval: 10s
+      retries: 10
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    depends_on: { db: { condition: service_healthy } }
+    environment:
+      GPC_DATABASE_URL: postgresql+psycopg://creances:${DB_PASSWORD}@db:5432/creances
+      GPC_SECRET_KEY: ${SECRET_KEY:?définir SECRET_KEY dans .env}
+      GPC_CORS_ORIGINS: ${PUBLIC_URL:-http://localhost:8080}
+      GPC_ENVIRONMENT: production
+    volumes: [storage:/data/storage]
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    depends_on: [backend]
+    ports: ["${HTTP_PORT:-8080}:80"]
+
+  # Sauvegarde quotidienne de la base et des pièces jointes
+  backup:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    depends_on: { db: { condition: service_healthy } }
+    environment:
+      PGHOST: db
+      PGUSER: creances
+      PGPASSWORD: ${DB_PASSWORD}
+      PGDATABASE: creances
+      RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-30}
+      BACKUP_HOUR: ${BACKUP_HOUR:-02}
+    volumes: [./backups:/backups, storage:/data/storage:ro, ./scripts:/scripts:ro]
+    entrypoint: ["sh", "/scripts/backup-loop.sh"]
+
+  # Notation du risque et contrôle de concordance chaque nuit (vers 3 h)
+  scheduler:
+    build: ./backend
+    restart: unless-stopped
+    depends_on: [backend]
+    environment:
+      GPC_DATABASE_URL: postgresql+psycopg://creances:${DB_PASSWORD}@db:5432/creances
+      GPC_SECRET_KEY: ${SECRET_KEY}
+    entrypoint: ["sh", "/app/scripts_nightly.sh"]
+
+volumes:
+  pgdata:
+  storage:

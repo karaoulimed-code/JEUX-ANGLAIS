@@ -80,10 +80,15 @@ def proposals(db: Session, as_of: dt.date | None = None, customer_ids: list[int]
                 last_level = max(last_level, db.get(DunningLevel, a.level_id).level)
         last = acts[0] if acts else None
         promise = next((a for a in acts if a.promised_date and a.promised_date >= as_of), None)
+        # Escalade progressive : on propose le niveau suivant le dernier niveau atteint,
+        # si son seuil de retard est atteint et si le délai minimal depuis la dernière
+        # action est écoulé (on ne passe pas d'une absence de relance au contentieux).
         recommended = None
-        for lv in levels:
-            if lv.days_after_due <= max_days and lv.level > last_level and amount >= lv.min_amount:
-                recommended = lv
+        gap = int(get_param(db, "dunning.min_days_between") or 0)
+        too_soon = bool(last and (as_of - last.action_date).days < gap)
+        nxt = next((lv for lv in levels if lv.level > last_level), None)
+        if nxt and nxt.days_after_due <= max_days and amount >= nxt.min_amount and not too_soon:
+            recommended = nxt
         due_followup = bool(last and last.next_action_date and last.next_action_date <= as_of)
         overdue_out.append({
             "customer_id": cid, "code": cust.code, "name": cust.legal_name, "risk_class": cust.risk_class,

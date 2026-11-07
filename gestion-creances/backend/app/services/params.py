@@ -21,6 +21,7 @@ DEFAULTS: dict = {
     "payment.auto_allocate_exclude_disputed": True,
     "payment.clearing_days_default": 2,
     "dunning.preventive_days": 7,
+    "dunning.min_days_between": 8,
     "dso.method": "COMPTABLE",
     "dso.period_days": 90,
     "kpi.recovery_rate_definition": "EXIGIBLE",

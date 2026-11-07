@@ -219,7 +219,9 @@ def synthesis(db: Session, as_of: dt.date | None = None) -> dict:
                      f"{d['over_limit'][0]['name']} (+{f(d['over_limit'][0]['overrun'])}).")
     if t["instruments_pending"]:
         lines.append(f"{t['instruments_pending_count']} chèque(s)/effet(s) en portefeuille pour {f(t['instruments_pending'])} restent à encaisser.")
-    return {"as_of": d["as_of"], "text": "\n".join(lines), "generated_by": "règles déterministes (aucun modèle externe)"}
+    import re as _re
+    text = _re.sub(r"(\d)\.(\d)", r"\1,\2", "\n".join(lines))  # virgule décimale française
+    return {"as_of": d["as_of"], "text": text, "generated_by": "règles déterministes (aucun modèle externe)"}
 
 
 class AIProvider:

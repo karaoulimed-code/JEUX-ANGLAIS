@@ -18,4 +18,14 @@ def run_migrations_online():
             context.run_migrations()
 
 
-run_migrations_online()
+def run_migrations_offline():
+    """Génère le script SQL complet de création de la base (alembic upgrade head --sql)."""
+    context.configure(url=config.get_main_option("sqlalchemy.url"), target_metadata=target_metadata, literal_binds=True)
+    with context.begin_transaction():
+        context.run_migrations()
+
+
+if context.is_offline_mode():
+    run_migrations_offline()
+else:
+    run_migrations_online()

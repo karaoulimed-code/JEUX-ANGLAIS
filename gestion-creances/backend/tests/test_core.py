@@ -561,19 +561,20 @@ def test_dunning_proposals_and_action(api):
     a = api()
     rec = api("recouvrement")
     c = mk_customer(a, contact_name="M. Ben Salah")
-    inv = mk_invoice(a, c["id"], days(75), "1000")    # 45 j de retard → niveau 2 recommandé
+    inv = mk_invoice(a, c["id"], days(75), "1000")    # 45 j de retard, aucune relance : escalade progressive → niveau 1
     props = rec.ok("get", "/dunning/proposals")
     p = props["overdue"][0]
-    assert p["recommended_level"]["level"] == 2 and p["needs_action"]
+    assert p["recommended_level"]["level"] == 1 and p["needs_action"]
     tpl = p["recommended_level"]["template_id"]
     prev = rec.ok("post", "/dunning/preview", {"customer_id": c["id"], "template_id": tpl})
     assert inv["number"] in prev["body"] and "1 191,000 TND" in prev["body"]
-    rec.ok("post", "/dunning/actions", {"customer_id": c["id"], "level_id": p["recommended_level"]["id"], "action_type": "RELANCE_2",
+    rec.ok("post", "/dunning/actions", {"customer_id": c["id"], "level_id": p["recommended_level"]["id"], "action_type": "RELANCE_1",
                                         "channel": "LETTRE", "invoice_ids": [inv["id"]], "result_code": "PROMESSE",
                                         "promised_date": str(T + dt.timedelta(days=10)), "promised_amount": "1191",
                                         "next_action_date": str(T + dt.timedelta(days=11)), "rendered_text": prev["body"]})
     p2 = rec.ok("get", "/dunning/proposals")["overdue"][0]
-    assert p2["promise"] and not p2["needs_action"] and p2["last_level"] == 2
+    assert p2["promise"] and not p2["needs_action"] and p2["last_level"] == 1
+    assert p2["recommended_level"] is None  # délai minimal entre deux relances non écoulé
     hist = rec.ok("get", f"/dunning/actions?customer_id={c['id']}")
     assert hist[0]["invoices"][0]["number"] == inv["number"]
 
