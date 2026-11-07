@@ -16,6 +16,7 @@ from ..models import (Attachment, CreditAllocation, Dispute, Invoice, InvoiceApp
                       PaymentAllocation, Supplier)
 from ..money import D
 from ..schemas import ApproveIn, CreditAllocIn, InvoiceIn, InvoiceUpdate, ReasonIn, ser
+from ..permissions import has_permission
 from ..security import BusinessError, Ctx, need
 from ..services import invoices as svc
 from ..services.common import ctx_audit
@@ -132,7 +133,9 @@ def reject(iid: int, body: ReasonIn, ctx: Ctx = Depends(need("invoice.validate")
 
 
 @router.post("/{iid}/cancel")
-def cancel(iid: int, body: ReasonIn, ctx: Ctx = Depends(need("invoice.create"))):
+def cancel(iid: int, body: ReasonIn, ctx: Ctx = Depends(need("read"))):
+    if not (has_permission(ctx.user.role, "invoice.create") or has_permission(ctx.user.role, "invoice.cancel")):
+        raise HTTPException(403, "Droit insuffisant pour annuler une facture.")
     inv = svc.cancel_invoice(ctx, get_or_404(ctx, Invoice, iid, "Facture"), body.reason)
     ctx.db.commit()
     return _detail(ctx, inv)
@@ -286,6 +289,9 @@ async def upload(entity: str = Form(...), entity_id: int = Form(...), doc_type: 
 @att_router.get("/{aid}")
 def download(aid: int, ctx: Ctx = Depends(need("read"))):
     att = get_or_404(ctx, Attachment, aid, "Pièce")
+    from pathlib import Path
+    if not Path(att.storage_path).is_file():
+        raise HTTPException(404, "Fichier absent du stockage (pièce de démonstration ou stockage non restauré).")
     return FileResponse(att.storage_path, media_type=att.content_type, filename=att.filename)
 
 

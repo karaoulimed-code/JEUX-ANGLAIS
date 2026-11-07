@@ -36,6 +36,11 @@ def _validated(ctx: Ctx, as_of: date | None = None, doc_types=("facture", "acomp
     return list(ctx.db.scalars(q))
 
 
+def _pc(x) -> str:
+    """Pourcentage lisible : 2.0000 -> « 2 », 1.5000 -> « 1,5 »."""
+    return format(D(x).normalize(), "f").replace(".", ",")
+
+
 def bucket_of(as_of: date, due: date | None) -> str:
     late = (as_of - due).days if due else 0
     for name, lo, hi in BUCKETS:
@@ -407,7 +412,7 @@ def payment_plan(ctx: Ctx, as_of: date, horizon_days: int = 30, cash_available: 
             if D(sup.late_penalty_pct) > 0:
                 pen = r3(payable * rate * D(sup.late_penalty_pct) / 100 * late / 365)
                 score += 15
-                reasons.append(f"Pénalités contractuelles estimées à ce jour : {pen} TND ({sup.late_penalty_pct} %/an).")
+                reasons.append(f"Pénalités contractuelles estimées à ce jour : {pen} TND ({_pc(sup.late_penalty_pct)} %/an).")
         elif D(sup.early_discount_pct) > 0 and disc_deadline >= as_of:
             p_ = D(sup.early_discount_pct) / 100
             days_gained = max((inv.due_date - disc_deadline).days, 1) if inv.due_date else 30
@@ -415,8 +420,8 @@ def payment_plan(ctx: Ctx, as_of: date, horizon_days: int = 30, cash_available: 
             if annual > cost_of_funds:
                 rec = "payer_anticipe_escompte"
                 score += 40
-                reasons.append(f"Escompte {sup.early_discount_pct} % avant le {disc_deadline:%d/%m/%Y} : "
-                               f"rendement annualisé {annual} % > coût de financement {cost_of_funds} %.")
+                reasons.append(f"Escompte {_pc(sup.early_discount_pct)} % avant le {disc_deadline:%d/%m/%Y} : "
+                               f"rendement annualisé {_pc(annual)} % > coût de financement {_pc(cost_of_funds)} %.")
             else:
                 reasons.append(f"Escompte disponible mais rendement annualisé ({annual} %) inférieur au coût de financement.")
         elif inv.due_date and inv.due_date <= lim:
@@ -427,7 +432,7 @@ def payment_plan(ctx: Ctx, as_of: date, horizon_days: int = 30, cash_available: 
             reasons.append("Échéance au-delà de l'horizon : paiement anticipé non justifié pour la trésorerie.")
         if sup.category in ("strategique", "critique"):
             score += 20
-            reasons.append(f"Fournisseur {sup.category} : priorité pour sécuriser l'approvisionnement.")
+            reasons.append(f"Fournisseur {sup.category.replace('strategique', 'stratégique')} : priorité pour sécuriser l'approvisionnement.")
         cands.append({"invoice_id": inv.id, "ref": inv.internal_ref, "numero": inv.supplier_number,
                       "supplier_id": sup.id, "fournisseur": sup.legal_name, "categorie": sup.category,
                       "echeance": inv.due_date, "solde": bal, "payable": max(payable, ZERO),

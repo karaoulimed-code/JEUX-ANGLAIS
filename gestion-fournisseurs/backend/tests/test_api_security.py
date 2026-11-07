@@ -158,3 +158,14 @@ def test_settings_and_tax_rates_api(client):
     assert r.status_code == 403
     r = client.put("/api/admin/accounts/fournisseurs", headers=comp, json={"account_code": "4011"})
     assert r.json()["account_code"] == "4011"
+
+
+def test_daf_can_cancel_validated_invoice_via_api(client, w):
+    from tests.conftest import L
+    s = w.supplier(rs_code=None)
+    inv = w.validate(w.invoice(s, [L(q="1", pu="100.000")]))
+    w.db.commit()
+    r = client.post(f"/api/invoices/{inv.id}/cancel", headers=login(client, "daf@t.tn"), json={"reason": "Erreur de fournisseur"})
+    assert r.status_code == 200 and r.json()["statut"] == "annulee"
+    r = client.post(f"/api/invoices/{inv.id}/cancel", headers=login(client, "tresorier@t.tn"), json={"reason": "xxxx"})
+    assert r.status_code == 403

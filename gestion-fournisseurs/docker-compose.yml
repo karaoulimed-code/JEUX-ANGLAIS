@@ -1,0 +1,28 @@
+# Déploiement local ou serveur : PostgreSQL + application.
+# 1) copier deploy/env.exemple vers .env et renseigner les secrets ; 2) docker compose up -d --build
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ap
+      POSTGRES_USER: ap
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?définir POSTGRES_PASSWORD dans .env}
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ap"]
+      interval: 10s
+      retries: 5
+  app:
+    build: { context: ., dockerfile: backend/Dockerfile }
+    restart: unless-stopped
+    depends_on: { db: { condition: service_healthy } }
+    environment:
+      AP_DATABASE_URL: postgresql+psycopg://ap:${POSTGRES_PASSWORD}@db/ap
+      AP_SECRET_KEY: ${AP_SECRET_KEY:?définir AP_SECRET_KEY dans .env}
+      AP_CORS_ORIGINS: ${AP_CORS_ORIGINS:-}
+    volumes: [storage:/data/storage]
+    ports: ["8000:8000"]
+volumes:
+  pgdata:
+  storage:

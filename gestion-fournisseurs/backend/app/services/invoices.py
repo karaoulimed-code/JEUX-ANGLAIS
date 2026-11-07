@@ -306,7 +306,7 @@ def run_controls(ctx: Ctx, inv: Invoice) -> list[dict]:
                     ecart = (D(l.unit_price) - D(pol.unit_price)) / D(pol.unit_price) * 100
                     if ecart > tol_price:
                         out.append(_a("ECART_PRIX", "bloquante",
-                                      f"Prix facturé {l.unit_price} vs commandé {pol.unit_price} (+{ecart:.2f} %).", i))
+                                      f"Prix facturé {r3(l.unit_price)} vs commandé {r3(pol.unit_price)} (+{ecart:.2f} %).", i))
                     elif ecart != 0:
                         out.append(_a("ECART_PRIX", "avertissement",
                                       f"Écart de prix {ecart:.2f} % dans la tolérance.", i))
@@ -317,7 +317,7 @@ def run_controls(ctx: Ctx, inv: Invoice) -> list[dict]:
                 Invoice.workflow_status.in_(ACTIVE_WF))))
             if other_ht + D(inv.total_ht) > D(po.total_ht) * (1 + tol_price / 100) + tol_abs:
                 out.append(_a("DEPASSEMENT_BC", "bloquante",
-                              f"Montant facturé cumulé HT {r3(other_ht + D(inv.total_ht))} > montant commandé {po.total_ht}."))
+                              f"Montant facturé cumulé HT {r3(other_ht + D(inv.total_ht))} > montant commandé {r3(po.total_ht)}."))
     # Prix anormal vs historique
     seuil_prix = setting_dec(db, cid, "seuil_hausse_prix_pct")
     for i, l in enumerate(inv.lines, 1):
