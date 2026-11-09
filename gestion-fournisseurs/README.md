@@ -4,7 +4,14 @@ Logiciel intégré de gestion du poste fournisseurs : **demande d'achat → comm
 
 Conforme au Système comptable des entreprises tunisien (loi n° 96-112), paramétrable (TVA, retenue à la source, timbre, plan de comptes, seuils) sans modification du code, et aligné sur les bonnes pratiques IFRS pour l'information de gestion.
 
-## Démarrage rapide (démonstration)
+## Essai immédiat (un double-clic, seul Python 3 est requis)
+
+- **Windows** : double-cliquer sur `demarrer-demo.bat`
+- **Mac / Linux** : lancer `./demarrer-demo.sh`
+
+Le navigateur s'ouvre sur http://localhost:8000 — connexion `daf@demo.tn` / `Demo2026pass`. Base locale de démonstration (SQLite) ; pour un usage réel, suivre le guide d'installation (PostgreSQL).
+
+## Démarrage avec Docker (démonstration)
 
 ```bash
 cp deploy/env.exemple .env   # renseigner POSTGRES_PASSWORD et AP_SECRET_KEY
